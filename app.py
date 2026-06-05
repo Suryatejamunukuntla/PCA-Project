@@ -109,30 +109,23 @@ if st.button("Save Cleaned Dataset"):
 
 st.header("3. Load Cleaned Dataset")
 
-files = [
-    f
-    for f in os.listdir(CLEAN_DIR)
-    if f.endswith(".csv")
-]
+cleaned_file = os.path.join(
+    CLEAN_DIR,
+    "spotify_cleaned.csv"
+)
 
-if not files:
+if not os.path.exists(cleaned_file):
 
     st.warning(
-        "No cleaned dataset found"
+        "Please click 'Save Cleaned Dataset' first."
     )
 
     st.stop()
 
-file = st.selectbox(
-    "Select Dataset",
-    files
-)
+data = pd.read_csv(cleaned_file)
 
-data = pd.read_csv(
-    os.path.join(
-        CLEAN_DIR,
-        file
-    )
+st.success(
+    "spotify_cleaned.csv Loaded Successfully"
 )
 
 st.dataframe(
@@ -156,11 +149,20 @@ features = [
 ]
 
 available_features = [
-    col for col in features
+    col
+    for col in features
     if col in data.columns
 ]
 
-data = data[available_features]
+if len(available_features) == 0:
+
+    st.error(
+        "Required Spotify columns not found."
+    )
+
+    st.stop()
+
+X = data[available_features]
 
 st.sidebar.header(
     "PCA Settings"
@@ -168,17 +170,15 @@ st.sidebar.header(
 
 max_components = min(
     len(available_features),
-    10
+    X.shape[1]
 )
 
 n_components = st.sidebar.slider(
     "Number Of Components",
-    2,
-    max_components,
-    2
+    min_value=2,
+    max_value=max_components,
+    value=2
 )
-
-X = data.copy()
 
 scaler = StandardScaler()
 
@@ -379,6 +379,21 @@ with open(
 
     pickle.dump(
         pca,
+        f
+    )
+
+scaler_path = os.path.join(
+    MODEL_DIR,
+    "scaler.pkl"
+)
+
+with open(
+    scaler_path,
+    "wb"
+) as f:
+
+    pickle.dump(
+        scaler,
         f
     )
 
